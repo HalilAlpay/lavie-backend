@@ -8,23 +8,25 @@ const generateRandomAvatar = () => {
   return `https://i.pravatar.cc/300?img=${randomAvatar}`;
 };
 
-// Kullanıcı Oluşturma (Create - Register)
+// ✅ Kullanıcı Oluşturma (Register)
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
     const defaultAvatar = generateRandomAvatar();
 
+    // Daha önce kayıtlı mı kontrol et
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return res
         .status(400)
-        .json({ error: "Email address is already registed." });
+        .json({ error: "Email address is already registered." });
     }
 
+    // Şifreyi hashle
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await new User({
+    // Yeni kullanıcı oluştur
+    const newUser = new User({
       username,
       email,
       password: hashedPassword,
@@ -33,14 +35,20 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
 
-    res.status(201).json(newUser);
+    // ✅ Doğru formatta cevap dön
+    res.status(201).json({
+      id: newUser._id,
+      email: newUser.email,
+      username: newUser.username,
+      avatar: newUser.avatar,
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Server error." });
   }
 });
 
-// Kullanıcı girişi (Login)
+// ✅ Kullanıcı Girişi (Login)
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -57,11 +65,11 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid password." });
     }
 
+    // ✅ Doğru formatta cevap dön
     res.status(200).json({
       id: user._id,
       email: user.email,
       username: user.username,
-      role: user.role,
       avatar: user.avatar,
     });
   } catch (error) {
