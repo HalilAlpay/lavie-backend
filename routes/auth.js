@@ -1,15 +1,21 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/User.js");
+const { validateUser } = require("../middleware/validation.js");
 
 const generateRandomAvatar = () => {
   const randomAvatar = Math.floor(Math.random() * 71);
   return `https://i.pravatar.cc/300?img=${randomAvatar}`;
 };
 
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+};
+
 // ✅ Kullanıcı Oluşturma (Register)
-router.post("/register", async (req, res) => {
+router.post("/register", validateUser, async (req, res) => {
   try {
     const { username, email, password } = req.body;
     const defaultAvatar = generateRandomAvatar();
@@ -35,12 +41,16 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
 
+    // Token oluştur
+    const token = generateToken(newUser._id);
+
     // ✅ Doğru formatta cevap dön
     res.status(201).json({
       id: newUser._id,
       email: newUser.email,
       username: newUser.username,
       avatar: newUser.avatar,
+      token
     });
   } catch (error) {
     console.log(error);
@@ -53,7 +63,11 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required." });
+    }
+
+    const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
       return res.status(401).json({ error: "Invalid email." });
@@ -65,16 +79,49 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid password." });
     }
 
+    // Token oluştur
+    const token = generateToken(user._id);
+
     // ✅ Doğru formatta cevap dön
     res.status(200).json({
       id: user._id,
       email: user.email,
       username: user.username,
       avatar: user.avatar,
+      token
     });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Server error." });
+  }
+});
+
+// Kullanıcı profili getirme
+router.get("/profile", async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token.' });
+    }
+
+    res.status(200).json({
+      id: user._id,
+      email: user.email,
+      username: user.username,
+      avatar: user.avatar,
+      role: user.role
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(401).json({ error: 'Invalid token.' });
   }
 });
 

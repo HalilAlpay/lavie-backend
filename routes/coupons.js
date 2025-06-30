@@ -10,7 +10,7 @@ router.post("/", async (req, res) => {
     const existingCoupon = await Coupon.findOne({ code });
 
     if (existingCoupon) {
-      return res.status(400).json({ error: "This coupon is alread exists." });
+      return res.status(400).json({ error: "This coupon already exists." });
     }
 
     const newCoupon = new Coupon(req.body);
@@ -35,24 +35,6 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Belirli bir kuponu getirme (Read - Single by Coupon ID)
-router.get("/:couponId", async (req, res) => {
-  try {
-    const couponId = req.params.couponId;
-
-    const coupon = await Coupon.findById(couponId);
-
-    if (!coupon) {
-      return res.status(404).json({ error: "Coupon not found." });
-    }
-
-    res.status(200).json(coupon);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Server error." });
-  }
-});
-
 // Belirli bir kuponu getirme (Read - Single by Coupon Code)
 router.get("/code/:couponCode", async (req, res) => {
   try {
@@ -65,6 +47,24 @@ router.get("/code/:couponCode", async (req, res) => {
     }
     const { discountPercent } = coupon;
     res.status(200).json({ discountPercent });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Server error." });
+  }
+});
+
+// Belirli bir kuponu getirme (Read - Single by Coupon ID)
+router.get("/:couponId", async (req, res) => {
+  try {
+    const couponId = req.params.couponId;
+
+    const coupon = await Coupon.findById(couponId);
+
+    if (!coupon) {
+      return res.status(404).json({ error: "Coupon not found." });
+    }
+
+    res.status(200).json(coupon);
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Server error." });
@@ -99,7 +99,7 @@ router.delete("/:couponId", async (req, res) => {
     try {
       const couponId = req.params.couponId;
   
-      const deletedCoupon = await Coupon.findByIdAndRemove(couponId);
+      const deletedCoupon = await Coupon.findByIdAndDelete(couponId);
   
       if (!deletedCoupon) {
         return res.status(404).json({ error: "Coupon not found." });
