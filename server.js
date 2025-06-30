@@ -20,6 +20,9 @@ const connect = async () => {
   }
 };
 
+// Render gibi platformlar için trust proxy ayarı
+app.set('trust proxy', 1);
+
 // ✅ CORS Ayarları
 const corsOptions = {
   origin: process.env.CLIENT_DOMAIN || "https://lavie-frontend.netlify.app",
