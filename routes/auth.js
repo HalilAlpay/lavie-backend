@@ -50,6 +50,7 @@ router.post("/register", validateUser, async (req, res) => {
       email: newUser.email,
       username: newUser.username,
       avatar: newUser.avatar,
+      role: newUser.role,
       token
     });
   } catch (error) {
@@ -88,6 +89,7 @@ router.post("/login", async (req, res) => {
       email: user.email,
       username: user.username,
       avatar: user.avatar,
+      role: user.role,
       token
     });
   } catch (error) {
